@@ -1,0 +1,24 @@
+{
+ "bindings": [
+  {
+   "authLevel": "function",
+   "type": "httpTrigger",
+   "direction": "in",
+   "name": "req",
+   "route": "{*segments}",
+   "methods": [
+    "get",
+    "post"
+   ]
+  },
+  {
+   "type": "http",
+   "direction": "out",
+   "name": "res"
+  }
+ ],
+ "_originalEntryPoint": false,
+ "_originalScriptFile": "index.js",
+ "scriptFile": "../index.js",
+ "entryPoint": "OmniShipping"
+}
