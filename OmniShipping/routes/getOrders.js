@@ -20,9 +20,9 @@ router.get("/epicor/users", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    "Select E.Company, E.EmpID, E.DcdUserID, E.Name, E.EMailAddress, U.OfficePhone, U.Phone as cellPhone, P.RoleCode, P.PerConID, EU.Plant_c as plant, E.EmpStatus " +
-      "From Erp.EmpBasic as E inner join Erp.EmpBasic_UD as EU on E.SysRowID = EU.ForeignSysRowID Left Join Erp.PerCon as P on E.Company = P.Company and E.PerConID = P.PerConID " +
-      "Left Join Erp.UserFile as U on E.Company = U.CurComp and E.DcdUserID = U.DcdUserID Where E.EmpStatus = 'A' AND E.Name NOT LIKE '%Backflush%' ",
+    `Select E.Company, E.EmpID, E.DcdUserID, E.Name, E.EMailAddress, U.OfficePhone, U.Phone as cellPhone, P.RoleCode, P.PerConID, EU.Plant_c as plant, E.EmpStatus
+      From Erp.EmpBasic as E inner join Erp.EmpBasic_UD as EU on E.SysRowID = EU.ForeignSysRowID Left Join Erp.PerCon as P on E.Company = P.Company and E.PerConID = P.PerConID
+      Left Join Erp.UserFile as U on E.Company = U.CurComp and E.DcdUserID = U.DcdUserID Where E.EmpStatus = 'A' AND E.Name NOT LIKE '%Backflush%'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -35,8 +35,8 @@ router.get("/epicor/customers", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    "Select C.Company, CU.Plant_c as plant, C.CustID, C.CustNum, C.Name, C.Address1, C.Address2, C.Address3, C.City, C.State, C.Zip, C.BTAddress1, C.BTAddress2, C.BTAddress3, C.BTCity, C.BTState, C.BTZip, C.PhoneNum as primaryPhoneNum " +
-      "From Customer as C Inner Join Erp.Customer_UD as CU ON C.SysRowID = CU.ForeignSysRowID WHERE C.Name NOT LIKE '%Do Not%' AND C.Address1 NOT LIKE '%Do Not%' AND C.Address2 NOT LIKE '%Do Not%'",
+    `Select C.Company, CU.Plant_c as plant, C.CustID, C.CustNum, C.Name, C.Address1, C.Address2, C.Address3, C.City, C.State, C.Zip, C.BTAddress1, C.BTAddress2, C.BTAddress3, C.BTCity, C.BTState, C.BTZip, C.PhoneNum as primaryPhoneNum
+      From Customer as C Inner Join Erp.Customer_UD as CU ON C.SysRowID = CU.ForeignSysRowID WHERE C.Name NOT LIKE '%Do Not%' AND C.Address1 NOT LIKE '%Do Not%' AND C.Address2 NOT LIKE '%Do Not%'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -49,8 +49,8 @@ router.get("/epicor/drivers", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    "Select PC.Company, 'MfgSys' as Plant, R.RoleCode, PC.FirstName, PC.MiddleName, PC.LastName, PC.Suffix, PC.Name, PC.PhoneNum from Erp.PerCon as PC " +
-      "left join Erp.RoleCd as R on PC.Company = R.Company and PC.RoleCode = R.RoleCode where PC.RoleCode = 'Driver' ",
+    `Select PC.Company, 'MfgSys' as Plant, R.RoleCode, PC.FirstName, PC.MiddleName, PC.LastName, PC.Suffix, PC.Name, PC.PhoneNum from Erp.PerCon as PC
+      left join Erp.RoleCd as R on PC.Company = R.Company and PC.RoleCode = R.RoleCode where PC.RoleCode = 'Driver'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -89,13 +89,13 @@ router.get("/epicor/orders", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    "Select OH.Company, ORR.Plant, OH.OrderNum AS orderNo, S.ShipToNum, S.Name, S.Address1 as jobAddress1, S.Address2 as jobAddress2, S.Address3 as jobAddress3, " +
-      "S.City as jobCity, S.State as jobState, S.Zip as jobZip, C.CustID, C.CustNum, C.Name name, C.PhoneNum phoneNo, C.Address1 as address1, C.Address2 as address2, C.City as city, " +
-      "C.State, OD.OrderLine as line, OD.LineDesc as item, OD.OrderQty itemQuant, OH.OrderComment as comments, OD.RequestDate as deliveryDateTime, OH.ShipViaCode as shipBy, " +
-      "CONVERT(nvarchar, DATEADD(second, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime, OH.ChangeDate From Erp.OrderHed AS OH " +
-      "Inner Join Erp.OrderDtl AS OD on OH.Company = OD.Company AND OH.CustNum = OD.CustNum AND OH.OrderNum = OD.OrderNum " +
-      "Inner Join Erp.OrderRel as ORR on OD.Company = ORR.Company AND OD.OrderNum = ORR.OrderNum AND OD.OrderLine = ORR.OrderLine " +
-      "Inner Join Erp.Customer as C on OH.Company = C.Company AND OH.CustNum = C.CustNum Left Join Erp.ShipTo as S on OD.Company = S.Company AND OD.CustNum = S.CustNum AND OH.ShipToNum = S.ShipToNum Where ORR.OpenOrder = '1' AND OD.OpenLine = '1' ",
+    `Select OH.Company, ORR.Plant, OH.OrderNum AS orderNo, S.ShipToNum, S.Name, S.Address1 as jobAddress1, S.Address2 as jobAddress2, S.Address3 as jobAddress3,
+      S.City as jobCity, S.State as jobState, S.Zip as jobZip, C.CustID, C.CustNum, C.Name name, C.PhoneNum phoneNo, C.Address1 as address1, C.Address2 as address2, C.City as city,
+      C.State, OD.OrderLine as line, OD.LineDesc as item, OD.OrderQty itemQuant, OH.OrderComment as comments, OD.RequestDate as deliveryDateTime, OH.ShipViaCode as shipBy,
+      CONVERT(nvarchar, DATEADD(second, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime, OH.ChangeDate From Erp.OrderHed AS OH
+      Inner Join Erp.OrderDtl AS OD on OH.Company = OD.Company AND OH.CustNum = OD.CustNum AND OH.OrderNum = OD.OrderNum
+      Inner Join Erp.OrderRel as ORR on OD.Company = ORR.Company AND OD.OrderNum = ORR.OrderNum AND OD.OrderLine = ORR.OrderLine
+      Inner Join Erp.Customer as C on OH.Company = C.Company AND OH.CustNum = C.CustNum Left Join Erp.ShipTo as S on OD.Company = S.Company AND OD.CustNum = S.CustNum AND OH.ShipToNum = S.ShipToNum Where ORR.OpenOrder = '1' AND OD.OpenLine = '1'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -108,11 +108,11 @@ router.get("/epicor/pos", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    "Select PH.Company, PR.Plant,PA.Name as BuyerName, PA.EMailAddress, V.Name as SupplierName, V.Address1, V.Address2, V.Address3, V.City, V.State, V.Zip, V.PhoneNum, PH.ShipViaCode, PH.PONum, Convert(Varchar,PD.POLine) as POLine, Convert(Varchar,PR.PORelNum) as PORelNum, " +
-      "PD.PartNum, PD.LineDesc, PR.TranType, PR.DueDate, PR.RelQty, PR.ReceivedQty, PR.ArrivedQty, PR.InvoicedQty, PR.NeedByDate, PH.ChangeDate, PD.UnitCost * (PR.RelQty - PR.ReceivedQty) as ExtCostOpen " +
-      "From Erp.POHeader as PH Inner Join Erp.PODetail as PD on PH.Company = PD.Company and PH.PONum = PD.PONUM Inner Join Erp.PORel as PR on PD.Company = PR.Company and PD.PONUM = PR.PONum and PD.POLine = PR.POLine " +
-      "Inner Join Erp.Vendor as V on PH.Company = V.Company and PH.VendorNum = V.VendorNum Inner Join Erp.PurAgent as PA on PH.Company = PA.Company and PH.BuyerID = PA.BuyerID " +
-      "Where PH.OpenOrder = '1' and PD.OpenLine = '1' and PR.OpenRelease = '1' ",
+    `Select PH.Company, PR.Plant,PA.Name as BuyerName, PA.EMailAddress, V.Name as SupplierName, V.Address1, V.Address2, V.Address3, V.City, V.State, V.Zip, V.PhoneNum, PH.ShipViaCode, PH.PONum, Convert(Varchar,PD.POLine) as POLine, Convert(Varchar,PR.PORelNum) as PORelNum,
+      PD.PartNum, PD.LineDesc, PR.TranType, PR.DueDate, PR.RelQty, PR.ReceivedQty, PR.ArrivedQty, PR.InvoicedQty, PR.NeedByDate, PH.ChangeDate, PD.UnitCost * (PR.RelQty - PR.ReceivedQty) as ExtCostOpen
+      From Erp.POHeader as PH Inner Join Erp.PODetail as PD on PH.Company = PD.Company and PH.PONum = PD.PONUM Inner Join Erp.PORel as PR on PD.Company = PR.Company and PD.PONUM = PR.PONum and PD.POLine = PR.POLine
+      Inner Join Erp.Vendor as V on PH.Company = V.Company and PH.VendorNum = V.VendorNum Inner Join Erp.PurAgent as PA on PH.Company = PA.Company and PH.BuyerID = PA.BuyerID
+      Where PH.OpenOrder = '1' and PD.OpenLine = '1' and PR.OpenRelease = '1'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -125,13 +125,13 @@ router.get("/epicor/shiptocontacts", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    "Select CC.Company,CC.CustNum, CC.ShipToNum, C.CustID, C.Name as CustName, CC.Name as ContactName, CC.EMailAddress, CC.PhoneNum, CC.PerConID " +
-      "from ERP.CustCnt as CC " +
-      "Inner Join (Select PC.Company, PC.PerConID From ERP.PerConLnk as PC where PC.ContextLink = 'ShipTo') as PC on CC.Company = PC.Company and CC.PerConID = PC.PerConID " +
-      "Inner Join ERP.Customer as C on CC.Company = C.Company and CC.CustNum = C.CustNum " +
-      "Where CC.ShipToNum <> '' AND CC.ShipToNum <> 'MAINADDRESS' AND CC.ShipToNum <> 'MAILINGADDRES' " +
-      "Group By CC.Company,CC.CustNum,CC.ShipToNum, C.CustID,C.Name,CC.Name,CC.EMailAddress, CC.PerConID,CC.PhoneNum " +
-      "Order By CC.Company, C.CustID, CC.PerConID, CC.ShipToNum",
+    `Select CC.Company,CC.CustNum, CC.ShipToNum, C.CustID, C.Name as CustName, CC.Name as ContactName, CC.EMailAddress, CC.PhoneNum, CC.PerConID
+      from ERP.CustCnt as CC
+      Inner Join (Select PC.Company, PC.PerConID From ERP.PerConLnk as PC where PC.ContextLink = 'ShipTo') as PC on CC.Company = PC.Company and CC.PerConID = PC.PerConID
+      Inner Join ERP.Customer as C on CC.Company = C.Company and CC.CustNum = C.CustNum
+      Where CC.ShipToNum <> '' AND CC.ShipToNum <> 'MAINADDRESS' AND CC.ShipToNum <> 'MAILINGADDRES'
+      Group By CC.Company,CC.CustNum,CC.ShipToNum, C.CustID,C.Name,CC.Name,CC.EMailAddress, CC.PerConID,CC.PhoneNum
+      Order By CC.Company, C.CustID, CC.PerConID, CC.ShipToNum`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -144,14 +144,14 @@ router.get("/epicor/completed", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    "Select OH.Company, ORR.Plant, OH.OrderNum AS orderNo, S.ShipToNum, S.Name, S.Address1 as jobAddress1, S.Address2 as jobAddress2, S.Address3 as jobAddress3, " +
-      "S.City as jobCity, S.State as jobState, S.Zip as jobZip, C.CustID, C.CustNum, C.Name name, C.PhoneNum phoneNo, C.Address1 as address1, C.Address2 as address2, C.City as city, " +
-      "C.State, OD.OrderLine as line, OD.LineDesc as item, OD.OrderQty itemQuant, OH.OrderComment as comments, OD.RequestDate as deliveryDateTime, OH.ShipViaCode as shipBy, " +
-      "CONVERT(nvarchar, DATEADD(second, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime, OH.ChangeDate From Erp.OrderHed AS OH " +
-      "Inner Join Erp.OrderDtl AS OD on OH.Company = OD.Company AND OH.CustNum = OD.CustNum AND OH.OrderNum = OD.OrderNum " +
-      "Inner Join Erp.OrderRel as ORR on OD.Company = ORR.Company AND OD.OrderNum = ORR.OrderNum AND OD.OrderLine = ORR.OrderLine " +
-      "Inner Join Erp.Customer as C on OH.Company = C.Company AND OH.CustNum = C.CustNum Left Join Erp.ShipTo as S on OD.Company = S.Company AND OD.CustNum = S.CustNum AND OH.ShipToNum = S.ShipToNum " +
-      "Where OD.OpenLine = '0' AND ORR.ReqDate >= CONVERT(datetime, '2020-10-03')",
+    `Select OH.Company, ORR.Plant, OH.OrderNum AS orderNo, S.ShipToNum, S.Name, S.Address1 as jobAddress1, S.Address2 as jobAddress2, S.Address3 as jobAddress3,
+      S.City as jobCity, S.State as jobState, S.Zip as jobZip, C.CustID, C.CustNum, C.Name name, C.PhoneNum phoneNo, C.Address1 as address1, C.Address2 as address2, C.City as city,
+      C.State, OD.OrderLine as line, OD.LineDesc as item, OD.OrderQty itemQuant, OH.OrderComment as comments, OD.RequestDate as deliveryDateTime, OH.ShipViaCode as shipBy,
+      CONVERT(nvarchar, DATEADD(second, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime, OH.ChangeDate From Erp.OrderHed AS OH
+      Inner Join Erp.OrderDtl AS OD on OH.Company = OD.Company AND OH.CustNum = OD.CustNum AND OH.OrderNum = OD.OrderNum
+      Inner Join Erp.OrderRel as ORR on OD.Company = ORR.Company AND OD.OrderNum = ORR.OrderNum AND OD.OrderLine = ORR.OrderLine
+      Inner Join Erp.Customer as C on OH.Company = C.Company AND OH.CustNum = C.CustNum Left Join Erp.ShipTo as S on OD.Company = S.Company AND OD.CustNum = S.CustNum AND OH.ShipToNum = S.ShipToNum
+      Where OD.OpenLine = '0'`,
     function (err, recordset) {
       if (err) console.log(err);
 
