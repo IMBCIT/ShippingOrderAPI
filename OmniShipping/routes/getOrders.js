@@ -89,13 +89,65 @@ router.get("/epicor/orders", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    `Select OH.Company, ORR.Plant, OH.OrderNum AS orderNo, S.ShipToNum, S.Name, S.Address1 as jobAddress1, S.Address2 as jobAddress2, S.Address3 as jobAddress3,
-      S.City as jobCity, S.State as jobState, S.Zip as jobZip, C.CustID, C.CustNum, C.Name name, C.PhoneNum phoneNo, C.Address1 as address1, C.Address2 as address2, C.City as city,
-      C.State, OD.OrderLine as line, OD.LineDesc as item, OD.OrderQty itemQuant, OH.OrderComment as comments, OD.RequestDate as deliveryDateTime, OH.ShipViaCode as shipBy,
-      CONVERT(nvarchar, DATEADD(second, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime, OH.ChangeDate From Erp.OrderHed AS OH
-      Inner Join Erp.OrderDtl AS OD on OH.Company = OD.Company AND OH.CustNum = OD.CustNum AND OH.OrderNum = OD.OrderNum
-      Inner Join Erp.OrderRel as ORR on OD.Company = ORR.Company AND OD.OrderNum = ORR.OrderNum AND OD.OrderLine = ORR.OrderLine
-      Inner Join Erp.Customer as C on OH.Company = C.Company AND OH.CustNum = C.CustNum Left Join Erp.ShipTo as S on OD.Company = S.Company AND OD.CustNum = S.CustNum AND OH.ShipToNum = S.ShipToNum Where ORR.OpenOrder = '1' AND OD.OpenLine = '1'`,
+    `SELECT OH.Company,
+    ORR.Plant,
+    OH.OrderNum AS orderNo,
+    S.ShipToNum,
+    S.Name,
+    CASE
+        WHEN OH.ShipViaCode = 'DS' THEN C.Address1
+        ELSE S.Address1
+    END AS jobAddress1,
+    CASE
+        WHEN OH.ShipViaCode = 'DS' THEN C.Address2
+        ELSE S.Address2
+    END AS jobAddress2,
+    CASE
+        WHEN OH.ShipViaCode = 'DS' THEN C.Address3
+        ELSE S.Address3
+    END AS jobAddress3,
+    CASE
+        WHEN OH.ShipViaCode = 'DS' THEN C.City
+        ELSE S.City
+    END AS jobCity,
+    CASE
+        WHEN OH.ShipViaCode = 'DS' THEN C.State
+        ELSE S.State
+    END AS jobState,
+    CASE
+        WHEN OH.ShipViaCode = 'DS' THEN C.Zip
+        ELSE S.Zip
+    END AS jobZip,
+    C.CustID,
+    C.CustNum,
+    C.Name name,
+    C.PhoneNum phoneNo,
+    C.Address1 AS address1,
+    C.Address2 AS address2,
+    C.City AS city,
+    C.State,
+    OD.OrderLine AS LINE,
+    OD.LineDesc AS item,
+    OD.OrderQty itemQuant,
+    OH.OrderComment AS comments,
+    OD.RequestDate AS deliveryDateTime,
+    OH.ShipViaCode AS shipBy,
+    CONVERT(nvarchar, DATEADD(SECOND, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime,
+    OH.ChangeDate
+FROM Erp.OrderHed AS OH
+INNER JOIN Erp.OrderDtl AS OD ON OH.Company = OD.Company
+AND OH.CustNum = OD.CustNum
+AND OH.OrderNum = OD.OrderNum
+INNER JOIN Erp.OrderRel AS ORR ON OD.Company = ORR.Company
+AND OD.OrderNum = ORR.OrderNum
+AND OD.OrderLine = ORR.OrderLine
+INNER JOIN Erp.Customer AS C ON OH.Company = C.Company
+AND OH.CustNum = C.CustNum
+LEFT JOIN Erp.ShipTo AS S ON OD.Company = S.Company
+AND OD.CustNum = S.CustNum
+AND OH.ShipToNum = S.ShipToNum
+WHERE ORR.OpenOrder = '1'
+AND OD.OpenLine = '1'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -108,11 +160,46 @@ router.get("/epicor/pos", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    `Select PH.Company, PR.Plant,PA.Name as BuyerName, PA.EMailAddress, V.Name as SupplierName, V.Address1, V.Address2, V.Address3, V.City, V.State, V.Zip, V.PhoneNum, PH.ShipViaCode, PH.PONum, Convert(Varchar,PD.POLine) as POLine, Convert(Varchar,PR.PORelNum) as PORelNum,
-      PD.PartNum, PD.LineDesc, PR.TranType, PR.DueDate, PR.RelQty, PR.ReceivedQty, PR.ArrivedQty, PR.InvoicedQty, PR.NeedByDate, PH.ChangeDate, PD.UnitCost * (PR.RelQty - PR.ReceivedQty) as ExtCostOpen
-      From Erp.POHeader as PH Inner Join Erp.PODetail as PD on PH.Company = PD.Company and PH.PONum = PD.PONUM Inner Join Erp.PORel as PR on PD.Company = PR.Company and PD.PONUM = PR.PONum and PD.POLine = PR.POLine
-      Inner Join Erp.Vendor as V on PH.Company = V.Company and PH.VendorNum = V.VendorNum Inner Join Erp.PurAgent as PA on PH.Company = PA.Company and PH.BuyerID = PA.BuyerID
-      Where PH.OpenOrder = '1' and PD.OpenLine = '1' and PR.OpenRelease = '1'`,
+    `SELECT PH.Company,
+    PR.Plant,
+    PA.Name AS BuyerName,
+    PA.EMailAddress,
+    V.Name AS SupplierName,
+    V.Address1,
+    V.Address2,
+    V.Address3,
+    V.City,
+    V.State,
+    V.Zip,
+    V.PhoneNum,
+    PH.ShipViaCode,
+    PH.PONum,
+    Convert(Varchar,PD.POLine) AS POLine,
+    Convert(Varchar,PR.PORelNum) AS PORelNum,
+    PD.PartNum,
+    PD.LineDesc,
+    PR.TranType,
+    PR.DueDate,
+    PR.RelQty,
+    PR.ReceivedQty,
+    PR.ArrivedQty,
+    PR.InvoicedQty,
+    PR.NeedByDate,
+    PH.ChangeDate,
+    PD.UnitCost * (PR.RelQty - PR.ReceivedQty) AS ExtCostOpen
+FROM Erp.POHeader AS PH
+INNER JOIN Erp.PODetail AS PD ON PH.Company = PD.Company
+AND PH.PONum = PD.PONUM
+INNER JOIN Erp.PORel AS PR ON PD.Company = PR.Company
+AND PD.PONUM = PR.PONum
+AND PD.POLine = PR.POLine
+INNER JOIN Erp.Vendor AS V ON PH.Company = V.Company
+AND PH.VendorNum = V.VendorNum
+INNER JOIN Erp.PurAgent AS PA ON PH.Company = PA.Company
+AND PH.BuyerID = PA.BuyerID
+WHERE PH.OpenOrder = '1'
+AND PD.OpenLine = '1'
+AND PR.OpenRelease = '1'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -125,13 +212,40 @@ router.get("/epicor/shiptocontacts", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    `Select CC.Company,CC.CustNum, CC.ShipToNum, C.CustID, C.Name as CustName, CC.Name as ContactName, CC.EMailAddress, CC.PhoneNum, CC.PerConID
-      from ERP.CustCnt as CC
-      Inner Join (Select PC.Company, PC.PerConID From ERP.PerConLnk as PC where PC.ContextLink = 'ShipTo') as PC on CC.Company = PC.Company and CC.PerConID = PC.PerConID
-      Inner Join ERP.Customer as C on CC.Company = C.Company and CC.CustNum = C.CustNum
-      Where CC.ShipToNum <> '' AND CC.ShipToNum <> 'MAINADDRESS' AND CC.ShipToNum <> 'MAILINGADDRES'
-      Group By CC.Company,CC.CustNum,CC.ShipToNum, C.CustID,C.Name,CC.Name,CC.EMailAddress, CC.PerConID,CC.PhoneNum
-      Order By CC.Company, C.CustID, CC.PerConID, CC.ShipToNum`,
+    `SELECT CC.Company,
+    CC.CustNum,
+    CC.ShipToNum,
+    C.CustID,
+    C.Name AS CustName,
+    CC.Name AS ContactName,
+    CC.EMailAddress,
+    CC.PhoneNum,
+    CC.PerConID
+FROM ERP.CustCnt AS CC
+INNER JOIN
+(SELECT PC.Company,
+       PC.PerConID
+FROM ERP.PerConLnk AS PC
+WHERE PC.ContextLink = 'ShipTo') AS PC ON CC.Company = PC.Company
+AND CC.PerConID = PC.PerConID
+INNER JOIN ERP.Customer AS C ON CC.Company = C.Company
+AND CC.CustNum = C.CustNum
+WHERE CC.ShipToNum <> ''
+AND CC.ShipToNum <> 'MAINADDRESS'
+AND CC.ShipToNum <> 'MAILINGADDRES'
+GROUP BY CC.Company,
+      CC.CustNum,
+      CC.ShipToNum,
+      C.CustID,
+      C.Name,
+      CC.Name,
+      CC.EMailAddress,
+      CC.PerConID,
+      CC.PhoneNum
+ORDER BY CC.Company,
+      C.CustID,
+      CC.PerConID,
+      CC.ShipToNum`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -144,14 +258,46 @@ router.get("/epicor/completed", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    `Select OH.Company, ORR.Plant, OH.OrderNum AS orderNo, S.ShipToNum, S.Name, S.Address1 as jobAddress1, S.Address2 as jobAddress2, S.Address3 as jobAddress3,
-      S.City as jobCity, S.State as jobState, S.Zip as jobZip, C.CustID, C.CustNum, C.Name name, C.PhoneNum phoneNo, C.Address1 as address1, C.Address2 as address2, C.City as city,
-      C.State, OD.OrderLine as line, OD.LineDesc as item, OD.OrderQty itemQuant, OH.OrderComment as comments, OD.RequestDate as deliveryDateTime, OH.ShipViaCode as shipBy,
-      CONVERT(nvarchar, DATEADD(second, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime, OH.ChangeDate From Erp.OrderHed AS OH
-      Inner Join Erp.OrderDtl AS OD on OH.Company = OD.Company AND OH.CustNum = OD.CustNum AND OH.OrderNum = OD.OrderNum
-      Inner Join Erp.OrderRel as ORR on OD.Company = ORR.Company AND OD.OrderNum = ORR.OrderNum AND OD.OrderLine = ORR.OrderLine
-      Inner Join Erp.Customer as C on OH.Company = C.Company AND OH.CustNum = C.CustNum Left Join Erp.ShipTo as S on OD.Company = S.Company AND OD.CustNum = S.CustNum AND OH.ShipToNum = S.ShipToNum
-      Where OD.OpenLine = '0'`,
+    `SELECT OH.Company,
+    ORR.Plant,
+    OH.OrderNum AS orderNo,
+    S.ShipToNum,
+    S.Name,
+    S.Address1 AS jobAddress1,
+    S.Address2 AS jobAddress2,
+    S.Address3 AS jobAddress3,
+    S.City AS jobCity,
+    S.State AS jobState,
+    S.Zip AS jobZip,
+    C.CustID,
+    C.CustNum,
+    C.Name name,
+    C.PhoneNum phoneNo,
+    C.Address1 AS address1,
+    C.Address2 AS address2,
+    C.City AS city,
+    C.State,
+    OD.OrderLine AS LINE,
+    OD.LineDesc AS item,
+    OD.OrderQty itemQuant,
+    OH.OrderComment AS comments,
+    OD.RequestDate AS deliveryDateTime,
+    OH.ShipViaCode AS shipBy,
+    CONVERT(nvarchar, DATEADD(SECOND, OH.ChangeTime, '0:00:00'), 108) AS ChangeTime,
+    OH.ChangeDate
+FROM Erp.OrderHed AS OH
+INNER JOIN Erp.OrderDtl AS OD ON OH.Company = OD.Company
+AND OH.CustNum = OD.CustNum
+AND OH.OrderNum = OD.OrderNum
+INNER JOIN Erp.OrderRel AS ORR ON OD.Company = ORR.Company
+AND OD.OrderNum = ORR.OrderNum
+AND OD.OrderLine = ORR.OrderLine
+INNER JOIN Erp.Customer AS C ON OH.Company = C.Company
+AND OH.CustNum = C.CustNum
+LEFT JOIN Erp.ShipTo AS S ON OD.Company = S.Company
+AND OD.CustNum = S.CustNum
+AND OH.ShipToNum = S.ShipToNum
+WHERE OD.OpenLine = '0'`,
     function (err, recordset) {
       if (err) console.log(err);
 
@@ -164,146 +310,265 @@ router.get("/epicor/backorders", function (req, res) {
   const request = new sql.Request(connection);
 
   request.query(
-    `Select ODT.Company,FC.Plant,ODT.CountRow,
-	ODT.CustNum, ODT.CustID, ODT.CustName,ODT.ShiptoNum, ODT.ShipToName, ODT.OrderNum, ODT.OrderLine,ODT.PartNum,ODT.ProdCode,
-	ODT.HedReqDate,ODT.DtlReqDate,ODT.OrrReqDate, ODT.LineReqDate, ODT.OrderRelNum, ODT.OrderDate,ODT.RelNeedByDate,ODT.OurStockShippedQty,ODT.OurJobShippedQty,ODT.OrderQty
-	
-	From dbo.ttFiscalPeriodRepPlant as FC 
-	
-	Inner Join
-	(Select C.Company,1 as CountRow, C.CustNum,C.CustID,C.Name As CustName,ORR.Plant,SR.SalesRepCode,SR.EMailAddress,SR.Name as SalesRepName,od.OrderQty,
-	ST.TerritoryID,ST.TerritoryDesc,
-	Case when UID.EntryPerson is null then '' else UID.EntryPerson end as EntryPerson,
-	Case when UID.EntryPersonName is null then '' else UID.EntryPersonName end as EntryPersonName,OH.OrderDate,STT.ShipToNum, STT.Name as ShipToName,
-	OH.OrderNum,OD.OrderLine,OD.PartNum, Case when P.ProdCode is null then 'NA' else P.ProdCode end as ProdCode,OH.RequestDate as HedReqDate,
-	OD.RequestDate as DtlReqDate,ORR.ReqDate as OrrReqDate,
-	Case when OD.RequestDate is null then OH.RequestDate Else OD.RequestDate end as LineReqDate, ORR.OrderRelNum,
-	Case when ORR.NeedByDate is null and OD.NeedByDate is null and OH.NeedByDate is null then OH.OrderDate
-	when ORR.NeedByDate is null and OD.NeedByDate is null then OH.NeedByDate 
-	When ORR.NeedByDate is null then OD.NeedByDate else ORR.NeedByDate end as RelNeedByDate, ORR.OurReqQty as OurRelReqQty, 
-	OD.DiscountPercent,OD.PricePerCode,OD.UnitPrice,
-	
-	Case when ORR.OurReqQty = 0 then 0 else (ORR.OurReqQty - (ORR.OurStockShippedQty + ORR.OurJobShippedQty)) * ((OD.DocExtPriceDtl / ORR.OurReqQty) * (1-(OD.DiscountPercent/100))) end
-	as OrderValue,
-	
-	Case when OD_UD.Number05 = 0 then 0 else OD_UD.Number05 end as BurFreight,
-	Sum(Case when OM.ExtMiscHedChg is null then 0 else OM.ExtMiscHedChg end) as ExtMiscHedChg,
-	Sum(Case when OM.ExtMiscLineChg is null then 0 else OM.ExtMiscLineChg end) as ExtMiscLineChg,
-	
-	Case when ORR.OurReqQty = 0 then 0 else (ORR.OurReqQty  * ((OD.DocExtPriceDtl / ORR.OurReqQty) * (1-(OD.DiscountPercent/100)))) end /* as OrderValue */ + 
-	(Case when OM.ExtMiscHedChg is null then 0 else OM.ExtMiscHedChg end) /* as ExtMiscHedChg */ + 
-	(Case when OM.ExtMiscLineChg is null then 0 else OM.ExtMiscLineChg end) /* as ExtMiscLineChg */ -
-	(Case when OD_UD.Number05 = 0 then 0 else OD_UD.Number05 end) /* as BurFreight */ as ExtOrdCommissionableAmt,
-	ORR.OurStockShippedQty,ORR.OurJobShippedQty
-	
-	From ERP.OrderHed as OH
-	
-		Inner Join ERP.OrderDtl as OD on
-		OH.Company = OD.Company and
-		OH.OrderNum = OD.OrderNum 
-	
-		Inner Join ERP.OrderDtl_UD as OD_UD on
-		OD.SysRowID = OD_UD.ForeignSysRowID
-	
-		Inner Join ERP.OrderRel as ORR on
-		OD.Company = ORR.Company and
-		OD.OrderNum = ORR.OrderNum and
-		OD.OrderLine = ORR.OrderLine
-	
-		Left Join ERP.Part as P on
-		OD.Company = P.Company and
-		OD.PartNum = P.PartNum
-	
-		Inner Join ERP.Customer as C on
-		OH.Company = C.Company and
-		OH.CustNum = C.CustNum
-	
-		Left Join ERP.ShipTo as STT on
-		OH.Company = STT.Company and
-		OH.CustNum = STT.CustNum and
-		OH.ShipToNum = STT.ShipToNum
-	
-	
-	
-		Left Join /* -- UserName for Entry Person when bad ID then " " -- */
-				(Select UF.CurComp,OH.OrderNum, Case when UF.DcdUserID = OH.EntryPerson then UF.DcdUserID else '' end as EntryPerson,
-				Case when UF.Name is null then '' Else UF.Name end as EntryPersonName
-				From ERP.UserFile as UF 
-		
-				Left Join ERP.OrderHed as OH on
-				UF.CurComp = OH.Company and
-				UF.DcdUserID = OH.EntryPerson
-		
-				Group By UF.CurComp,OH.OrderNum,UF.DcdUserID,OH.EntryPerson,UF.Name) as UID on
-		
-		OH.Company = UID.CurComp and
-		OH.OrderNum = UID.OrderNum
-	
-		Left Join ERP.SalesRep as SR on
-		C.Company = SR.Company and
-		C.SalesRepCode = SR.SalesRepCode
-	
-		Left Join ERP.SalesTer as ST on
-		C.Company = ST.Company and
-		C.TerritoryID = ST.TerritoryID
-	
-	Left Join /*  ---Misc Hed and Line Charges---  */
-				(Select OH.Company, OH.OrderNum,OD.OrderLine,
-							 
-				Case when OM.DocMiscAmt is null then 0 when OM.OrderLine = 0 then 0 else OM.DocMiscAmt end as ExtMiscLineChg,
-				Case when OM.DocMiscAmt is null then 0 When OM.OrderLIne > 0 then 0 else OM.DocMiscAmt end as ExtMiscHedChg
-							
-	
-				From ERP.OrderHed as OH 
-	
-				Inner join ERP.OrderDtl as OD on
-				OH.Company = OD.Company and
-				OH.OrderNum = OD.OrderNum 
-	
-				Inner Join ERP.OrderMsc as OM on
-				OD.Company = OM.Company and
-				OD.OrderNum = OM.OrderNum and
-				OD.OrderLine = Case when OM.OrderLine = 0 then 1 else OM.OrderLine end
-		
-				where 
-					OM.MiscCode <> 'FRTO' and
-					OM.MiscCode<> 'INFR' and
-					OM.MiscCode <> 'FRHT' and
-					OM.MiscCode <> 'FC' and
-					OM.MiscCode <> 'LEGA' and
-					OM.MiscCode <> 'PVFF' and
-					OM.MiscCode <> 'RST%' and
-					--OM.MiscCode <> 'STRG' and
-					OM.MiscCode <> 'RSTF'
-		
-				Group By OH.Company, OH.OrderNum,OD.OrderLine,OM.DocMiscAmt,OM.OrderLine) 
-		as OM on
-		
-		C.Company = OM.Company and
-		OH.OrderNum = OM.OrderNum and
-		OD.OrderLine = OM.OrderLine
-							
-		where 
-		OH.OrderDate>='1/1/2017' and 
-		(OH.OpenOrder = 1 and
-		OD.OpenLine = 1 and
-		ORR.OpenRelease = 1) and
-		(ORR.OurJobShippedQty + ORR.OurStockShippedQty) > 0
-		
-		Group By C.Company, C.CustNum,C.CustID,C.Name,ORR.Plant,ST.TerritoryID,ST.TerritoryDesc,OH.EntryPerson,STT.ShipToNum, STT.Name,
-		OH.OrderNum,OD.OrderLine,OD.PartNum,OD.DocExtPriceDtl,
-	
-		Case when P.ProdCode is null then 'NA' else P.ProdCode end, ORR.OrderRelNum,ORR.ReqDate,OD.DiscountPercent,OD.PricePerCode,OD.UnitPrice,
-		OH.EntryPerson, OH.EntryPerson,SR.SalesRepCode,SR.EMailAddress,SR.Name,UID.EntryPerson,UID.EntryPersonName,OH.OrderDate,ORR.OurReqQty, 
-		ORR.OurJobShippedQty , ORR.OurStockShippedQty,ORR.ReqDate,OD.RequestDate,OH.RequestDate,ORR.NeedByDate, OD.NeedByDate, OH.NeedByDate,
-		ORR.OurReqQty,OD.UnitPrice,OD.DocUnitPrice,OD_UD.Number05,OD.OrderQty,OM.ExtMiscLineChg,OM.ExtMiscHedChg) as ODT on
-	
-	
-		FC.Company = ODT.Company and
-		FC.Plant = ODT.Plant and
-		FC.SalesRepCode = ODT.SalesRepCode and
-		(FC.PerStartDate  <= ODT.OrrReqDate and
-		FC.PerEndDate >= ODT.OrrReqDate)`,
+    `SELECT ODT.Company,
+    FC.Plant,
+    ODT.CountRow,
+    ODT.CustNum,
+    ODT.CustID,
+    ODT.CustName,
+    ODT.ShiptoNum,
+    ODT.ShipToName,
+    ODT.OrderNum,
+    ODT.OrderLine,
+    ODT.PartNum,
+    ODT.ProdCode,
+    ODT.HedReqDate,
+    ODT.DtlReqDate,
+    ODT.OrrReqDate,
+    ODT.LineReqDate,
+    ODT.OrderRelNum,
+    ODT.OrderDate,
+    ODT.RelNeedByDate,
+    ODT.OurStockShippedQty,
+    ODT.OurJobShippedQty,
+    ODT.OrderQty
+FROM dbo.ttFiscalPeriodRepPlant AS FC
+INNER JOIN
+(SELECT C.Company,
+       1 AS CountRow,
+       C.CustNum,
+       C.CustID,
+       C.Name AS CustName,
+       ORR.Plant,
+       SR.SalesRepCode,
+       SR.EMailAddress,
+       SR.Name AS SalesRepName,
+       od.OrderQty,
+       ST.TerritoryID,
+       ST.TerritoryDesc,
+       CASE
+           WHEN UID.EntryPerson IS NULL THEN ''
+           ELSE UID.EntryPerson
+       END AS EntryPerson,
+       CASE
+           WHEN UID.EntryPersonName IS NULL THEN ''
+           ELSE UID.EntryPersonName
+       END AS EntryPersonName,
+       OH.OrderDate,
+       STT.ShipToNum,
+       STT.Name AS ShipToName,
+       OH.OrderNum,
+       OD.OrderLine,
+       OD.PartNum,
+       CASE
+           WHEN P.ProdCode IS NULL THEN 'NA'
+           ELSE P.ProdCode
+       END AS ProdCode,
+       OH.RequestDate AS HedReqDate,
+       OD.RequestDate AS DtlReqDate,
+       ORR.ReqDate AS OrrReqDate,
+       CASE
+           WHEN OD.RequestDate IS NULL THEN OH.RequestDate
+           ELSE OD.RequestDate
+       END AS LineReqDate,
+       ORR.OrderRelNum,
+       CASE
+           WHEN ORR.NeedByDate IS NULL
+                AND OD.NeedByDate IS NULL
+                AND OH.NeedByDate IS NULL THEN OH.OrderDate
+           WHEN ORR.NeedByDate IS NULL
+                AND OD.NeedByDate IS NULL THEN OH.NeedByDate
+           WHEN ORR.NeedByDate IS NULL THEN OD.NeedByDate
+           ELSE ORR.NeedByDate
+       END AS RelNeedByDate,
+       ORR.OurReqQty AS OurRelReqQty,
+       OD.DiscountPercent,
+       OD.PricePerCode,
+       OD.UnitPrice,
+       CASE
+           WHEN ORR.OurReqQty = 0 THEN 0
+           ELSE (ORR.OurReqQty - (ORR.OurStockShippedQty + ORR.OurJobShippedQty)) * ((OD.DocExtPriceDtl / ORR.OurReqQty) * (1-(OD.DiscountPercent/100)))
+       END AS OrderValue,
+       CASE
+           WHEN OD_UD.Number05 = 0 THEN 0
+           ELSE OD_UD.Number05
+       END AS BurFreight,
+       Sum(CASE
+               WHEN OM.ExtMiscHedChg IS NULL THEN 0
+               ELSE OM.ExtMiscHedChg
+           END) AS ExtMiscHedChg,
+       Sum(CASE
+               WHEN OM.ExtMiscLineChg IS NULL THEN 0
+               ELSE OM.ExtMiscLineChg
+           END) AS ExtMiscLineChg,
+       CASE
+           WHEN ORR.OurReqQty = 0 THEN 0
+           ELSE (ORR.OurReqQty * ((OD.DocExtPriceDtl / ORR.OurReqQty) * (1-(OD.DiscountPercent/100))))
+       END /* as OrderValue */ + (CASE
+                                      WHEN OM.ExtMiscHedChg IS NULL THEN 0
+                                      ELSE OM.ExtMiscHedChg
+                                  END)/* as ExtMiscHedChg */ + (CASE
+                                                                    WHEN OM.ExtMiscLineChg IS NULL THEN 0
+                                                                    ELSE OM.ExtMiscLineChg
+                                                                END)/* as ExtMiscLineChg */ - (CASE
+                                                                                                   WHEN OD_UD.Number05 = 0 THEN 0
+                                                                                                   ELSE OD_UD.Number05
+                                                                                               END) /* as BurFreight */ AS ExtOrdCommissionableAmt,
+                                                                                              ORR.OurStockShippedQty,
+                                                                                              ORR.OurJobShippedQty
+FROM ERP.OrderHed AS OH
+INNER JOIN ERP.OrderDtl AS OD ON OH.Company = OD.Company
+AND OH.OrderNum = OD.OrderNum
+INNER JOIN ERP.OrderDtl_UD AS OD_UD ON OD.SysRowID = OD_UD.ForeignSysRowID
+INNER JOIN ERP.OrderRel AS ORR ON OD.Company = ORR.Company
+AND OD.OrderNum = ORR.OrderNum
+AND OD.OrderLine = ORR.OrderLine
+LEFT JOIN ERP.Part AS P ON OD.Company = P.Company
+AND OD.PartNum = P.PartNum
+INNER JOIN ERP.Customer AS C ON OH.Company = C.Company
+AND OH.CustNum = C.CustNum
+LEFT JOIN ERP.ShipTo AS STT ON OH.Company = STT.Company
+AND OH.CustNum = STT.CustNum
+AND OH.ShipToNum = STT.ShipToNum
+LEFT JOIN /* -- UserName for Entry Person when bad ID then " " -- */
+  (SELECT UF.CurComp,
+          OH.OrderNum,
+          CASE
+              WHEN UF.DcdUserID = OH.EntryPerson THEN UF.DcdUserID
+              ELSE ''
+          END AS EntryPerson,
+          CASE
+              WHEN UF.Name IS NULL THEN ''
+              ELSE UF.Name
+          END AS EntryPersonName
+   FROM ERP.UserFile AS UF
+   LEFT JOIN ERP.OrderHed AS OH ON UF.CurComp = OH.Company
+   AND UF.DcdUserID = OH.EntryPerson
+   GROUP BY UF.CurComp,
+            OH.OrderNum,
+            UF.DcdUserID,
+            OH.EntryPerson,
+            UF.Name) AS UID ON OH.Company = UID.CurComp
+AND OH.OrderNum = UID.OrderNum
+LEFT JOIN ERP.SalesRep AS SR ON C.Company = SR.Company
+AND C.SalesRepCode = SR.SalesRepCode
+LEFT JOIN ERP.SalesTer AS ST ON C.Company = ST.Company
+AND C.TerritoryID = ST.TerritoryID
+LEFT JOIN /*  ---Misc Hed and Line Charges---  */
+  (SELECT OH.Company,
+          OH.OrderNum,
+          OD.OrderLine,
+          CASE
+              WHEN OM.DocMiscAmt IS NULL THEN 0
+              WHEN OM.OrderLine = 0 THEN 0
+              ELSE OM.DocMiscAmt
+          END AS ExtMiscLineChg,
+          CASE
+              WHEN OM.DocMiscAmt IS NULL THEN 0
+              WHEN OM.OrderLIne > 0 THEN 0
+              ELSE OM.DocMiscAmt
+          END AS ExtMiscHedChg
+   FROM ERP.OrderHed AS OH
+   INNER JOIN ERP.OrderDtl AS OD ON OH.Company = OD.Company
+   AND OH.OrderNum = OD.OrderNum
+   INNER JOIN ERP.OrderMsc AS OM ON OD.Company = OM.Company
+   AND OD.OrderNum = OM.OrderNum
+   AND OD.OrderLine = CASE
+                          WHEN OM.OrderLine = 0 THEN 1
+                          ELSE OM.OrderLine
+                      END
+   WHERE OM.MiscCode <> 'FRTO'
+     AND OM.MiscCode<> 'INFR'
+     AND OM.MiscCode <> 'FRHT'
+     AND OM.MiscCode <> 'FC'
+     AND OM.MiscCode <> 'LEGA'
+     AND OM.MiscCode <> 'PVFF'
+     AND OM.MiscCode <> 'RST%'
+     AND --OM.MiscCode <> 'STRG' and
+OM.MiscCode <> 'RSTF'
+   GROUP BY OH.Company,
+            OH.OrderNum,
+            OD.OrderLine,
+            OM.DocMiscAmt,
+            OM.OrderLine) AS OM ON C.Company = OM.Company
+AND OH.OrderNum = OM.OrderNum
+AND OD.OrderLine = OM.OrderLine
+INNER JOIN
+  (SELECT sd.Company,
+          sd.OrderNum
+   FROM erp.ShipDtl sd
+   INNER JOIN erp.ShipHead sh ON sd.Company = sh.Company
+   AND sd.PackNum = sh.PackNum
+   WHERE sh.ReadyToInvoice = 1
+   GROUP BY sd.Company,
+            sd.OrderNum) AS sd ON oh.Company = sd.Company
+AND oh.OrderNum = sd.OrderNum
+INNER JOIN
+  (SELECT orel.Company,
+          orel.OrderNum,
+          SUM(orel.OurJobShippedQty)+SUM(orel.OurStockShippedQty) AS OrderShippedQty
+   FROM erp.OrderRel orel
+   GROUP BY orel.Company,
+            orel.OrderNum) AS BOFilter ON oh.Company = BOFilter.Company
+AND oh.OrderNum = BOFilter.OrderNum
+AND BOFilter.OrderShippedQty > 0 --DH Note: Limit the rows to orders that have had a shipment on ANY line.
+
+WHERE OH.OrderDate>='1/1/2017'
+  AND (OH.OpenOrder = 1
+       AND OD.OpenLine = 1
+       AND ORR.OpenRelease = 1)--and (ORR.OurJobShippedQty + ORR.OurStockShippedQty) > 0 --DH Note: This is the filter that is removing lines without any shipments on them even if the sales order is backordered.
+
+GROUP BY C.Company,
+         C.CustNum,
+         C.CustID,
+         C.Name,
+         ORR.Plant,
+         ST.TerritoryID,
+         ST.TerritoryDesc,
+         OH.EntryPerson,
+         STT.ShipToNum,
+         STT.Name,
+         OH.OrderNum,
+         OD.OrderLine,
+         OD.PartNum,
+         OD.DocExtPriceDtl,
+         CASE
+             WHEN P.ProdCode IS NULL THEN 'NA'
+             ELSE P.ProdCode
+         END,
+         ORR.OrderRelNum,
+         ORR.ReqDate,
+         OD.DiscountPercent,
+         OD.PricePerCode,
+         OD.UnitPrice,
+         OH.EntryPerson,
+         OH.EntryPerson,
+         SR.SalesRepCode,
+         SR.EMailAddress,
+         SR.Name,
+         UID.EntryPerson,
+         UID.EntryPersonName,
+         OH.OrderDate,
+         ORR.OurReqQty,
+         ORR.OurJobShippedQty,
+         ORR.OurStockShippedQty,
+         ORR.ReqDate,
+         OD.RequestDate,
+         OH.RequestDate,
+         ORR.NeedByDate,
+         OD.NeedByDate,
+         OH.NeedByDate,
+         ORR.OurReqQty,
+         OD.UnitPrice,
+         OD.DocUnitPrice,
+         OD_UD.Number05,
+         OD.OrderQty,
+         OM.ExtMiscLineChg,
+         OM.ExtMiscHedChg) AS ODT ON FC.Company = ODT.Company
+AND FC.Plant = ODT.Plant
+AND FC.SalesRepCode = ODT.SalesRepCode
+AND (FC.PerStartDate <= ODT.OrrReqDate
+  AND FC.PerEndDate >= ODT.OrrReqDate)`,
     function (err, recordset) {
       if (err) console.log(err);
 
